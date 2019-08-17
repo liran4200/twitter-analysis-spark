@@ -6,42 +6,45 @@ import os
 import json
 import yaml
 
-
 import logging
 logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
 
+KAFKA_TOPIC = 'teststream2'
+KAFKA_SERVER = 'localhost:9092'
 
 class TweeterStreamListener(tweepy.StreamListener):
-    """ A class to read the twitter stream and push it to Kafka"""
+    """ A class to read the twitter stream - tweets and publish to Kafka"""
    
     producer = KafkaProducer(
-            bootstrap_servers=["localhost:9092"],
+            bootstrap_servers=[KAFKA_SERVER],
             value_serializer=lambda x: 
             x.encode('utf-8')
     )
   
     def on_data(self, data):
-        """ This method is called whenever new data arrives from live stream.
+        """ This method is trigger whenever new data arrives from real-time stream.
         We asynchronously push this data to kafka queue"""
         data_json = json.loads(data)
+
+        # handle tweets arrived without 'text' property
         if data_json.get('text') is None:
             return True
-        str_tweet = data_json['text']
-        print(str_tweet)
+        str_tweet = data_json['text'] 
+        logging.info(f"------- -- {str_tweet}") # DEBUG
         try:
-            self.producer.send('teststream2', value=str_tweet).get(timeout=30)
+            self.producer.send(KAFKA_TOPIC, value=str_tweet)
         except Exception as e:
             print(e)
             return False
         return True
 
     def on_error(self, status_code):
-        print(f"Error received in kafka producer {status_code}")
-        return True # Don't kill the stream
+        print(f"Error ocurred on: kafka producer {status_code}")
+        return True # keep the stream alive
 
     def on_timeout(self):
-        return True # Don't kill the stream
+        print(f"Error ocurred, caused by timeout error in producer {status_code}")
+        return True # keep the stream alive
 
 if __name__ == '__main__':
 
@@ -52,14 +55,13 @@ if __name__ == '__main__':
         except yaml.YAMLError as exc:
             raise exc
 
-    # Create Auth object
+    # generate auth  twitter object
     auth = tweepy.OAuthHandler(creds['consumerKey'], creds['consumerSecret'])
     auth.set_access_token(creds['accessToken'], creds['accessTokenSecret'])
     api = tweepy.API(auth)
 
-    # Create stream and bind the listener to it
+    # create stream, bind the listener
     stream = tweepy.Stream(auth, listener=TweeterStreamListener(api))
 
-    #Custom Filter rules pull all traffic for those filters in real time.
+    # custom filter rules pull all traffic for those filters in real time.
     stream.filter(track = ['love', 'hate'])
-    #stream.filter(track=['python','java','scala'])
