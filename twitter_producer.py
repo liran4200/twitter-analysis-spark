@@ -18,17 +18,19 @@ class TweeterStreamListener(tweepy.StreamListener):
     producer = KafkaProducer(
             bootstrap_servers=["localhost:9092"],
             value_serializer=lambda x: 
-            json.dumps(x).encode('utf-8')
+            x.encode('utf-8')
     )
   
     def on_data(self, data):
         """ This method is called whenever new data arrives from live stream.
         We asynchronously push this data to kafka queue"""
         data_json = json.loads(data)
+        if data_json.get('text') is None:
+            return True
         str_tweet = data_json['text']
         print(str_tweet)
         try:
-            self.producer.send('teststream', value=str_tweet).get(timeout=30)
+            self.producer.send('teststream2', value=str_tweet).get(timeout=30)
         except Exception as e:
             print(e)
             return False
@@ -59,5 +61,5 @@ if __name__ == '__main__':
     stream = tweepy.Stream(auth, listener=TweeterStreamListener(api))
 
     #Custom Filter rules pull all traffic for those filters in real time.
-    #stream.filter(track = ['love', 'hate'], languages = ['en'])
-    stream.filter(track=['python','java','scala'])
+    stream.filter(track = ['love', 'hate'])
+    #stream.filter(track=['python','java','scala'])
