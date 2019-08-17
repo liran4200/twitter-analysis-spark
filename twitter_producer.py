@@ -7,21 +7,28 @@ import json
 import yaml
 
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+
 
 class TweeterStreamListener(tweepy.StreamListener):
     """ A class to read the twitter stream and push it to Kafka"""
    
-    producer = KafkaProducer(bootstrap_servers=["localhost:9092"])
-
-
+    producer = KafkaProducer(
+            bootstrap_servers=["localhost:9092"],
+            value_serializer=lambda x: 
+            json.dumps(x).encode('utf-8')
+    )
+  
     def on_data(self, data):
         """ This method is called whenever new data arrives from live stream.
         We asynchronously push this data to kafka queue"""
         data_json = json.loads(data)
-        str_tweet = data_json['text'].encode('utf-8')
+        str_tweet = data_json['text']
         print(str_tweet)
         try:
-            self.producer.send('twitterstream', str_tweet)
+            self.producer.send('teststream', value=str_tweet).get(timeout=30)
         except Exception as e:
             print(e)
             return False
