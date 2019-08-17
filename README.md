@@ -1,5 +1,12 @@
 # Twitter Analysis
 
+## Description
+This project is demonstrating a using of Kafka producer and Spark consumer running upon zookeeper sever.
+This project is implemented as part  parallel systems course based upon Apache Spark.
+
+The project counts the occurences of sentiments in a real-time stream of tweets form tweerter, the stream is managed by kafka producer and the processing (couting and classification) is mannged by PySpark and Python-Kaka. the tweets are classified binary to: positive or negative and then accumulated to create graphic presenation of the sentiment occurances over the  recorded period of time. 
+
+
 
 ## Running Commands:
 
@@ -23,3 +30,6 @@
 
 7. acivate consumer
    `kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning`
+
+
+
